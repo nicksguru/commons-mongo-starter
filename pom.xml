@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0">
+    <parent>
+        <groupId>guru.nicks.commons</groupId>
+        <artifactId>parent</artifactId>
+        <version>2.2511.4</version><!-- [PVM] -->
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- groupId is redundant (inherited from parent), but required by Maven Central -->
+    <groupId>guru.nicks.commons</groupId>
+    <artifactId>mongo-starter</artifactId>
+    <version>2.2511.4</version><!-- [PVM] -->
+
+    <name>Nicks.Guru Commons Mongo Starter</name>
+    <description>Starter for working with MongoDB</description>
+    <url>https://github.com/nicksguru/commons-mongo-starter</url>
+
+    <licenses>
+        <license>
+            <name>GNU Lesser General Public License, Version 3</name>
+            <url>https://www.gnu.org/licenses/lgpl-3.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>Nick S.</name>
+            <email>job-offers@nicks.guru</email>
+            <url>https://nicks.guru</url>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:git://github.com/nicksguru/commons-mongo-starter.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/nicksguru/commons-mongo-starter.git</developerConnection>
+        <url>https://github.com/nicksguru/commons-mongo-starter</url>
+    </scm>
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/nicksguru/commons-mongo-starter/issues</url>
+    </issueManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>guru.nicks.commons</groupId>
+            <artifactId>rest-dto</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>guru.nicks.commons</groupId>
+            <artifactId>utils</artifactId>
+        </dependency>
+
+        <!-- Spring Data for MongoDB.
+             Also, MongoAnnotationProcessor resides there, and even if raw spring-data-mongodb is plugged in,
+             without this starter, it forces the app connect to MongoDB anyway. Therefore, this annotation
+             processor can't go to root POM. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-mongodb</artifactId>
+        </dependency>
+
+        <!-- UserDetails -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-core</artifactId>
+        </dependency>
+
+        <!-- compresses Mongo data stream -->
+        <dependency>
+            <groupId>com.github.luben</groupId>
+            <artifactId>zstd-jni</artifactId>
+        </dependency>
+        <!-- QueryDSL executor for Mongo repositories . WARNING: doesn't support DB multi-tenancy and projections! -->
+        <dependency>
+            <groupId>com.querydsl</groupId>
+            <artifactId>querydsl-mongodb</artifactId>
+        </dependency>
+
+        <!-- DB migrations -->
+        <dependency>
+            <groupId>io.mongock</groupId>
+            <artifactId>mongock-springboot-v3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.mongock</groupId>
+            <artifactId>mongodb-springdata-v4-driver</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+        </dependency>
+        <!-- @Builder, @Slf4j, etc. -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+</project>
