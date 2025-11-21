@@ -1,8 +1,8 @@
 package guru.nicks.commons.mongo;
 
 import guru.nicks.commons.mongo.domain.FullTextSearchAwareDocument;
-import guru.nicks.commons.utils.NgramUtils;
-import guru.nicks.commons.utils.NgramUtilsConfig;
+import guru.nicks.commons.utils.text.NgramUtils;
+import guru.nicks.commons.utils.text.NgramUtilsConfig;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
