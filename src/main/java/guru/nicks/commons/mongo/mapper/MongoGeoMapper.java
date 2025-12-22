@@ -15,10 +15,7 @@ public class MongoGeoMapper {
             return null;
         }
 
-        return GeoPointDto.builder()
-                .lat(source.getY())
-                .lon(source.getX())
-                .build();
+        return new GeoPointDto(source.getY(), source.getX());
     }
 
     public GeoJsonPoint toPoint(GeoPointDto dto) {
@@ -26,7 +23,7 @@ public class MongoGeoMapper {
             return null;
         }
 
-        return new GeoJsonPoint(dto.getLon(), dto.getLat());
+        return new GeoJsonPoint(dto.lon(), dto.lat());
     }
 
 }
