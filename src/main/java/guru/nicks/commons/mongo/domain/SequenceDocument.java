@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import lombok.extern.jackson.Jacksonized;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -24,7 +23,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @NoArgsConstructor
 @FieldNameConstants // for use in manually constructed queries
 //
-@Jacksonized
 @SuperBuilder(toBuilder = true)
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
