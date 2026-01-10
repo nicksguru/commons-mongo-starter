@@ -278,7 +278,7 @@ public interface EnhancedMongoRepository<T extends Persistable<ID>, ID, E extend
      * @return document
      * @throws E document not found
      */
-    default T getByIdOrThrow(ID id) {
+    default T getById(ID id) {
         return findById(id).orElseThrow(() ->
                 ReflectionUtils.instantiateEvenWithoutDefaultConstructor(getExceptionClass()));
     }
