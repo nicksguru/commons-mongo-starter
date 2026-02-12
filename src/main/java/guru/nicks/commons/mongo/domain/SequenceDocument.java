@@ -9,12 +9,13 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.bson.types.ObjectId;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
  * All indexes are created by DB migrations. See also crucial notes in {@link MongoCascadeSave @MongoCascadeSave}.
+ * <p>
+ * {@link #getId()} is the sequence name.
  */
 @Document(SequenceDocument.MONGO_COLLECTION)
 // goes to _class, excludes package name
@@ -27,7 +28,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @SuperBuilder(toBuilder = true)
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class SequenceDocument extends AuditableDocument<ObjectId> {
+public class SequenceDocument extends AuditableDocument<String> {
 
     public static final String MONGO_COLLECTION = "sequences";
 
