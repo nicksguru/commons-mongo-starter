@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public abstract class AbstractFullTextSearchAwareDocumentListener
-        extends AbstractMongoEventListener<FullTextSearchAwareDocument> {
+        extends AbstractMongoEventListener<FullTextSearchAwareDocument<?>> {
 
     /**
      * Limit to 1Mb to avoid DB oversizing (although Mongo permits 16Mb per document).
@@ -35,8 +35,8 @@ public abstract class AbstractFullTextSearchAwareDocumentListener
     public static final int MAX_FULL_TEXT_SEARCH_DATA_LENGTH = Math.toIntExact(DataSize.ofMegabytes(1).toBytes());
 
     @Override
-    public void onBeforeConvert(BeforeConvertEvent<FullTextSearchAwareDocument> event) {
-        FullTextSearchAwareDocument source = event.getSource();
+    public void onBeforeConvert(BeforeConvertEvent<FullTextSearchAwareDocument<?>> event) {
+        FullTextSearchAwareDocument<?> source = event.getSource();
 
         String str = source.getFullTextSearchDataSuppliers()
                 .stream()

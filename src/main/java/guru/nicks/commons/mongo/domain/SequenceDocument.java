@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
+import org.bson.types.ObjectId;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -26,7 +27,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @SuperBuilder(toBuilder = true)
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class SequenceDocument extends AuditableDocument {
+public class SequenceDocument extends AuditableDocument<ObjectId> {
 
     public static final String MONGO_COLLECTION = "sequences";
 

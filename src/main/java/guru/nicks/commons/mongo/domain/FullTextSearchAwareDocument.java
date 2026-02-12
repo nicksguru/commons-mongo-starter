@@ -25,7 +25,7 @@ import java.util.function.Supplier;
 @SuperBuilder(toBuilder = true)
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public abstract class FullTextSearchAwareDocument extends AuditableDocument {
+public abstract class FullTextSearchAwareDocument<T> extends AuditableDocument<T> {
 
     /**
      * Assigned automatically by a Mongo save listener.

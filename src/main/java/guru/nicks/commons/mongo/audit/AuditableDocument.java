@@ -1,11 +1,13 @@
 package guru.nicks.commons.mongo.audit;
 
 import guru.nicks.commons.mongo.MongoCascadeSave;
+import guru.nicks.commons.utils.UuidUtils;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
+import org.bson.types.ObjectId;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -17,6 +19,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.UUID;
 
 /**
  * MongoDB document which keeps track of who and when created/modified it. Unfortunately, it's impossible to introduce a
@@ -24,13 +27,16 @@ import java.time.Instant;
  * updates made by someone else concurrently) because in that case {@link MongoCascadeSave @MongoCascadeSave} causes
  * error: <i>Cannot save entity ID with version VER to collection COL. Has it been modified meanwhile?</i>. An implicit
  * modification takes place indeed: after implicit inserts,
+ *
+ * @param <T> {@code _id} column type, usually {@link ObjectId} or, if the creation timestamp should not be revealed,
+ *            {@link UUID} (use {@link UuidUtils#generateUuidV4()} for fast generation)
  */
 @Document
 @Data
 @NoArgsConstructor
 @FieldNameConstants
 @SuperBuilder(toBuilder = true)
-public abstract class AuditableDocument implements Persistable<String>, Serializable {
+public abstract class AuditableDocument<T> implements Persistable<T>, Serializable {
 
     /**
      * Primary ID. This field name is reserved by Mongo.
@@ -41,7 +47,7 @@ public abstract class AuditableDocument implements Persistable<String>, Serializ
      * {@code lookup} will not work!
      */
     @Id
-    private String id;
+    private T id;
 
     /**
      * Date of record creation. Should not be declared with <code>@NotNull</code> because it's assigned automatically
