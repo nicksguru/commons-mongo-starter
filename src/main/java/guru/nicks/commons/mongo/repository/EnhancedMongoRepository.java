@@ -73,6 +73,7 @@ import static org.springframework.data.mongodb.core.aggregation.Fields.UNDERSCOR
  * @param <ID> primary key type
  * @param <E>  exception type to throw when document is not found
  * @param <F>  filter type (pass {@code Void} for no filter)
+ * @see #assignAuditData(AuditableDocument)
  */
 @NoRepositoryBean
 @SuppressWarnings("java:S119")  // allow type names like 'ID'
@@ -93,7 +94,8 @@ public interface EnhancedMongoRepository<T extends Persistable<ID>, ID, E extend
 
     /**
      * Does what Spring Data listener does (but if ID is set manually, Spring doesn't set createdDate; this method
-     * does). Needed for low-level operations, such as {@link BulkOperations}, which bypass the listener. Assigns:
+     * does). Needed for low-level operations that bypass the listener, such as {@link BulkOperations}, and when the
+     * primary key is assigned manually. Assigns:
      * <ol>
      *     <li>{@link AuditableDocument#getLastModifiedDate()} - always</li>
      *     <li>{@link AuditableDocument#getCreatedDate()} - if it's {@code null}</li>

@@ -27,6 +27,9 @@ import java.util.UUID;
  * updates made by someone else concurrently) because in that case {@link MongoCascadeSave @MongoCascadeSave} causes
  * error: <i>Cannot save entity ID with version VER to collection COL. Has it been modified meanwhile?</i>. An implicit
  * modification takes place indeed: after implicit inserts,
+ * <p>
+ * WARNING: manually setting the primary key prevents Spring Data from setting
+ * {@link #getCreatedDate()}/{@link #getCreatedBy()}.
  *
  * @param <T> {@code _id} column type, usually {@link ObjectId} or, if the creation timestamp should not be revealed,
  *            {@link UUID} (use {@link UuidUtils#generateUuidV4()} for fast generation)
