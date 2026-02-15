@@ -1,11 +1,9 @@
 package guru.nicks.commons.mongo.config;
 
-import guru.nicks.commons.mongo.MongoTransactionTemplate;
 import guru.nicks.commons.mongo.audit.AuditDetailsDocument;
 import guru.nicks.commons.mongo.audit.MongoAuditor;
 import guru.nicks.commons.mongo.domain.MongoConstants;
 import guru.nicks.commons.mongo.domain.MyMongoProperties;
-import guru.nicks.commons.mongo.impl.MongoSequenceServiceImpl;
 
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
@@ -21,17 +19,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.mongo.MongoClientSettingsBuilderCustomizer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.env.Environment;
 import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.data.mongodb.MongoDatabaseFactory;
-import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory;
-import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
 import org.springframework.data.mongodb.core.mapping.event.ValidatingEntityCallback;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
@@ -47,6 +41,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+/**
+ * Transaction managers and transaction templates aren't created automatically. This is intentional: some projects have
+ * multi-tenancy, some do not (see {@link MongoConstants} for bean names). Some projects may combine JPA transactions
+ * with Mongo ones (which requires one of the beans to be primary), some may not.
+ */
 @AutoConfiguration
 @EnableConfigurationProperties(MyMongoProperties.class)
 @EnableMongoAuditing(auditorAwareRef = "mongoAuditor", dateTimeProviderRef = "mongoAuditDateTimeProvider")
@@ -71,56 +70,6 @@ public class CommonsMongoAutoConfiguration {
     @Bean("mongoAuditor")
     public AuditorAware<AuditDetailsDocument> mongoAuditor() {
         return new MongoAuditor();
-    }
-
-    /**
-     * Creates a primary bean - to distinguish from {@link MongoConstants#SHARED_MONGO_TEMPLATE_BEAN}.
-     */
-    @ConditionalOnMissingBean(MongoTemplate.class)
-    @Bean
-    @Primary
-    public MongoTemplate mongoTemplate(MongoDatabaseFactory databaseFactory, MappingMongoConverter mappingConverter) {
-        return new MongoTemplate(databaseFactory, mappingConverter);
-    }
-
-    /**
-     * Creates {@link MongoTemplate} bean under the name required by {@link MongoSequenceServiceImpl}. The point is that
-     * sequences are stored in a shared database, not in a tenant-specific one (in case multi-tenancy is ever enabled).
-     */
-    @ConditionalOnMissingBean(name = MongoConstants.SHARED_MONGO_TEMPLATE_BEAN)
-    @Bean(MongoConstants.SHARED_MONGO_TEMPLATE_BEAN)
-    public MongoTemplate sharedMongoTemplate(MongoTemplate mongoTemplate) {
-        return mongoTemplate;
-    }
-
-    /**
-     * Autowire this bean by its class ({@link MongoTransactionTemplate}) in order to distinguish from other DB engines'
-     * transaction templates.
-     * <p>
-     * NOTE: Mongo transactions only work in a replica set.
-     *
-     * @param transactionManager transaction manager
-     * @return transaction template
-     */
-    @ConditionalOnMissingBean(MongoTransactionTemplate.class)
-    @Bean
-    public MongoTransactionTemplate mongoTransactionTemplate(MongoTransactionManager transactionManager) {
-        return new MongoTransactionTemplate(transactionManager);
-    }
-
-    /**
-     * Autowire this bean by its class ({@link MongoTransactionManager}) in order to distinguish from other DB engines'
-     * transaction managers.
-     * <p>
-     * NOTE: Mongo transactions only work in a replica set.
-     *
-     * @param databaseFactory database factory
-     * @return transaction manager
-     */
-    @ConditionalOnMissingBean(MongoTransactionManager.class)
-    @Bean
-    public MongoTransactionManager mongoTransactionManager(MongoDatabaseFactory databaseFactory) {
-        return new MongoTransactionManager(databaseFactory);
     }
 
     /**

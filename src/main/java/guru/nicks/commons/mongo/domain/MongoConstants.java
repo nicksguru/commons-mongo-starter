@@ -46,6 +46,16 @@ public class MongoConstants {
     public static final MongoSearchLanguage FALLBACK_SEARCH_LANGUAGE = MongoSearchLanguage.EN;
 
     /**
+     * Usage: {@code @Transactional(MongoConstants.TRANSACTION_MANAGER_BEAN)}. Don't rely on bare {@code @Transactional}
+     * - JPA has its own transaction manager.
+     */
+    public static final String TRANSACTION_MANAGER_BEAN = "mongoTransactionManager";
+    /**
+     * Usage: {@code @Qualifier(MongoConstants.TRANSACTION_TEMPLATE)}.
+     */
+    public static final String TRANSACTION_TEMPLATE_BEAN = "mongoTransactionTemplate";
+
+    /**
      * For another (or perhaps the same) database holding NON-multi-tenant data. Usage:
      * {@code @Qualifier(MongoConstants.SHARED_MONGO_TEMPLATE)}.
      */

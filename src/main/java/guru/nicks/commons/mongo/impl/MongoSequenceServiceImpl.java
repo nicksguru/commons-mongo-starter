@@ -1,28 +1,22 @@
 package guru.nicks.commons.mongo.impl;
 
-import guru.nicks.commons.mongo.domain.MongoConstants;
 import guru.nicks.commons.mongo.domain.SequenceDocument;
 import guru.nicks.commons.mongo.service.MongoSequenceService;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.stereotype.Service;
 
 import static org.springframework.data.mongodb.core.aggregation.Fields.UNDERSCORE_ID;
 
-@Service
 @RequiredArgsConstructor
 public class MongoSequenceServiceImpl implements MongoSequenceService {
 
-    /**
-     * All DB sequences MUST reside in a shared DB excluded from multi-tenancy. Otherwise, their values will collide.
-     */
-    @Qualifier(MongoConstants.SHARED_MONGO_TEMPLATE_BEAN)
+    @NonNull // Lombok creates runtime nullness check for this own annotation only
     private final MongoTemplate mongoTemplate;
 
     @Override
