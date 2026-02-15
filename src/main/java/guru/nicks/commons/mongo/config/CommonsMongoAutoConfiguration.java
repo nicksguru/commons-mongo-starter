@@ -16,7 +16,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.bson.BsonDateTime;
 import org.bson.UuidRepresentation;
 import org.bson.types.Decimal128;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.mongo.MongoClientSettingsBuilderCustomizer;
@@ -36,8 +35,6 @@ import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
 import org.springframework.data.mongodb.core.mapping.event.ValidatingEntityCallback;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
-import org.springframework.transaction.support.TransactionCallback;
-import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import java.math.BigDecimal;
@@ -66,7 +63,7 @@ public class CommonsMongoAutoConfiguration {
      * Tells MongoDB how to store UUIDs - as {@link UuidRepresentation#STANDARD}.
      */
     @Bean
-    public MongoClientSettingsBuilderCustomizer mongoClientSettingsBuilderCustomizer() {
+    public MongoClientSettingsBuilderCustomizer commonsMongoClientSettingsBuilderCustomizer() {
         return builder -> builder.uuidRepresentation(UuidRepresentation.STANDARD);
     }
 
@@ -76,6 +73,9 @@ public class CommonsMongoAutoConfiguration {
         return new MongoAuditor();
     }
 
+    /**
+     * Creates a primary bean - to distinguish from {@link MongoConstants#SHARED_MONGO_TEMPLATE_BEAN}.
+     */
     @ConditionalOnMissingBean(MongoTemplate.class)
     @Bean
     @Primary
@@ -94,28 +94,31 @@ public class CommonsMongoAutoConfiguration {
     }
 
     /**
-     * Autowire this bean by name ({@link MongoConstants#TRANSACTION_TEMPLATE_BEAN}) using {@code Qualifier @Qualifier}
-     * in order to distinguish from other DB engines' transaction templates.
+     * Autowire this bean by its class ({@link MongoTransactionTemplate}) in order to distinguish from other DB engines'
+     * transaction templates.
+     * <p>
+     * NOTE: Mongo transactions only work in a replica set.
      *
      * @param transactionManager transaction manager
      * @return transaction template
      */
-    @ConditionalOnMissingBean(name = MongoConstants.TRANSACTION_TEMPLATE_BEAN)
-    @Bean(MongoConstants.TRANSACTION_TEMPLATE_BEAN)
-    public MongoTransactionTemplate mongoTransactionTemplate(
-            @Qualifier(MongoConstants.TRANSACTION_MANAGER_BEAN) MongoTransactionManager transactionManager) {
+    @ConditionalOnMissingBean(MongoTransactionTemplate.class)
+    @Bean
+    public MongoTransactionTemplate mongoTransactionTemplate(MongoTransactionManager transactionManager) {
         return new MongoTransactionTemplate(transactionManager);
     }
 
     /**
-     * Autowire this bean by name ({@link MongoConstants#TRANSACTION_MANAGER_BEAN}) using {@code Qualifier @Qualifier}
-     * in order to distinguish from other DB engines' transaction managers.
+     * Autowire this bean by its class ({@link MongoTransactionManager}) in order to distinguish from other DB engines'
+     * transaction managers.
+     * <p>
+     * NOTE: Mongo transactions only work in a replica set.
      *
      * @param databaseFactory database factory
      * @return transaction manager
      */
-    @ConditionalOnMissingBean(name = MongoConstants.TRANSACTION_MANAGER_BEAN)
-    @Bean(MongoConstants.TRANSACTION_MANAGER_BEAN)
+    @ConditionalOnMissingBean(MongoTransactionManager.class)
+    @Bean
     public MongoTransactionManager mongoTransactionManager(MongoDatabaseFactory databaseFactory) {
         return new MongoTransactionManager(databaseFactory);
     }
@@ -161,18 +164,9 @@ public class CommonsMongoAutoConfiguration {
 
     /**
      * Adds support for {@link NotNull @NonNull} and other constraints at the document level.
-     * <p>
-     * Also makes a dummy call to {@link TransactionTemplate#execute(TransactionCallback)} to ensure transactions are
-     * supported (this functionality is not related to validation, just a start-up check).
      */
-    @ConditionalOnMissingBean(name = "validatingMongoEventListener")
-    @Bean("validatingMongoEventListener")
-    public ValidatingEntityCallback validatingMongoEventListener(LocalValidatorFactoryBean validator,
-            @Qualifier(MongoConstants.TRANSACTION_TEMPLATE_BEAN)
-            TransactionTemplate transactionTemplate) {
-        log.debug("Checking if transactionTemplate works for MongoDB");
-        transactionTemplate.execute(txStatus -> null);
-
+    @Bean
+    public ValidatingEntityCallback commonsValidatingMongoEventListener(LocalValidatorFactoryBean validator) {
         log.debug("Enabling constraint-based validation of Mongo entities");
         return new ValidatingEntityCallback(validator);
     }
