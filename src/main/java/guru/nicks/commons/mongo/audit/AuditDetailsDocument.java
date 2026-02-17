@@ -1,9 +1,13 @@
 package guru.nicks.commons.mongo.audit;
 
+import guru.nicks.commons.log.domain.LogContext;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.FieldNameConstants;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,35 +23,42 @@ import java.util.Objects;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder(toBuilder = true)
+//
+@FieldNameConstants
+@Builder
+@Slf4j
 public class AuditDetailsDocument implements Serializable {
 
     /**
-     * Doesn't always correspond to an existing user because the user may have been deleted. As the last resort, see
-     * {@link #getUsername()}.
+     * Doesn't always correspond to an existing user because the user may have been deleted.
      */
     private String userId;
 
     /**
-     * The last resort to keep track of changes if the user ({@link #getUserId()}) has been deleted.
+     * {@link LogContext#TRACE_ID}
      */
-    private String username;
+    private String traceId;
 
     /**
-     * Retrieves user ID and name out of the given argument. The user ID is retrieved using reflection because
-     * {@link UserDetails} has no such property.
+     * Assigns:
+     * <ul>
+     *     <li>{@link #getTraceId() traceId} from {@link LogContext#TRACE_ID}</li>
+     *     <li>{@link #getUserId() userId} from the argument using reflection ({@code id} property)</li>
+     * </ul>
+     * <p>
+     * {@link UserDetails} has no {@code id} property, but its subclasses may have. Exceptions (no such property /
+     * error reading property / etc.) are logged ignored.
      *
      * @param userDetails user details
      */
     public AuditDetailsDocument(UserDetails userDetails) {
-        username = userDetails.getUsername();
+        traceId = LogContext.TRACE_ID.find().orElse(null);
 
         try {
-            userId = Objects.toString(
-                    PropertyUtils.getProperty(userDetails, "id"),
-                    null);
+            userId = Objects.toString(PropertyUtils.getProperty(userDetails, "id"), null);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            // do nothing
+            log.error("Failed to retrieve user ID (as 'id' property) from [{}], ignoring: {}",
+                    userDetails.getClass().getName(), e.getMessage(), e);
         }
     }
 
