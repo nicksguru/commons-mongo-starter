@@ -80,7 +80,7 @@ public class CommonsMongoAutoConfiguration {
      * @param customizers MongoDB client settings customizers
      * @return database factory
      */
-    @ConditionalOnMissingBean(MongoDatabaseFactory.class)
+    @ConditionalOnMissingBean
     @Bean
     public MongoDatabaseFactory mongoDatabaseFactory(MyMongoProperties properties, Environment environment,
             List<MongoClientSettingsBuilderCustomizer> customizers) {
