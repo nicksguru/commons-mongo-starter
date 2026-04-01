@@ -4,6 +4,7 @@ import guru.nicks.commons.mongo.audit.AuditDetailsDocument;
 import guru.nicks.commons.mongo.audit.MongoAuditor;
 import guru.nicks.commons.mongo.domain.MongoConstants;
 import guru.nicks.commons.mongo.domain.MyMongoProperties;
+import guru.nicks.commons.mongo.mapper.MongoAuditDetailsMapper;
 
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
@@ -14,6 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.bson.BsonDateTime;
 import org.bson.UuidRepresentation;
 import org.bson.types.Decimal128;
+import org.mapstruct.factory.Mappers;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.mongo.MongoClientSettingsBuilderCustomizer;
@@ -59,17 +61,27 @@ public class CommonsMongoAutoConfiguration {
     private static final String DB_URI_FORMAT = "%s://%s:%s@%s/%s%s";
 
     /**
-     * Tells MongoDB how to store UUIDs - as {@link UuidRepresentation#STANDARD}.
+     * Tells MongoDB how to store UUIDs - as {@link UuidRepresentation#STANDARD}. This is not a conditional bean.
      */
     @Bean
     public MongoClientSettingsBuilderCustomizer commonsMongoClientSettingsBuilderCustomizer() {
+        log.debug("Building {} bean for UUID representation",
+                MongoClientSettingsBuilderCustomizer.class.getSimpleName());
         return builder -> builder.uuidRepresentation(UuidRepresentation.STANDARD);
     }
 
     @ConditionalOnMissingBean(name = "mongoAuditor")
     @Bean("mongoAuditor")
     public AuditorAware<AuditDetailsDocument> mongoAuditor() {
+        log.debug("Building {} bean", MongoAuditor.class.getSimpleName());
         return new MongoAuditor();
+    }
+
+    @ConditionalOnMissingBean
+    @Bean
+    public MongoAuditDetailsMapper mongoAuditDetailsMapper() {
+        log.debug("Building {} bean", MongoAuditDetailsMapper.class.getSimpleName());
+        return Mappers.getMapper(MongoAuditDetailsMapper.class);
     }
 
     /**
@@ -84,6 +96,8 @@ public class CommonsMongoAutoConfiguration {
     @Bean
     public MongoDatabaseFactory mongoDatabaseFactory(MyMongoProperties properties, Environment environment,
             List<MongoClientSettingsBuilderCustomizer> customizers) {
+        log.debug("Building {} bean", MongoDatabaseFactory.class.getSimpleName());
+
         var connectionString = deriveConnectionString(properties, environment);
         var settingsBuilder = MongoClientSettings
                 .builder()
@@ -116,7 +130,8 @@ public class CommonsMongoAutoConfiguration {
      */
     @Bean
     public ValidatingEntityCallback commonsValidatingMongoEventListener(LocalValidatorFactoryBean validator) {
-        log.debug("Enabling constraint-based validation of Mongo entities");
+        log.debug("Building {} bean for constraint-based validation of Mongo entities",
+                ValidatingEntityCallback.class.getSimpleName());
         return new ValidatingEntityCallback(validator);
     }
 
@@ -128,6 +143,8 @@ public class CommonsMongoAutoConfiguration {
      */
     @Bean
     public MongoCustomConversions commonsMongoCustomConversions() {
+        log.debug("Building {} bean for date and decimal conversions",
+                MongoCustomConversions.class.getSimpleName());
         return new MongoCustomConversions(List.of(
                 new LocalDateToMongoDateConverter(), new MongoDateToLocalDateConverter(),
                 new ZonedDateTimeToMongoDateConverter(), new MongoDateToZonedDateTimeConverter(),
@@ -141,8 +158,10 @@ public class CommonsMongoAutoConfiguration {
      *
      * @return bean
      */
-    @Bean
+    @ConditionalOnMissingBean(name = "mongoAuditDateTimeProvider")
+    @Bean("mongoAuditDateTimeProvider")
     public DateTimeProvider mongoAuditDateTimeProvider() {
+        log.debug("Building {} bean for Mongo audit date/time provider", DateTimeProvider.class.getSimpleName());
         return () -> Optional.of(Instant.now());
     }
 
