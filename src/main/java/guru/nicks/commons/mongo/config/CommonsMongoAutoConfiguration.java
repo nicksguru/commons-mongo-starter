@@ -1,5 +1,6 @@
 package guru.nicks.commons.mongo.config;
 
+import guru.nicks.commons.mongo.MongoCascadeSaveListener;
 import guru.nicks.commons.mongo.audit.AuditDetailsDocument;
 import guru.nicks.commons.mongo.audit.MongoAuditor;
 import guru.nicks.commons.mongo.domain.MongoConstants;
@@ -27,6 +28,7 @@ import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory;
 import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
 import org.springframework.data.mongodb.core.mapping.event.ValidatingEntityCallback;
@@ -133,6 +135,12 @@ public class CommonsMongoAutoConfiguration {
         log.debug("Building {} bean for constraint-based validation of Mongo entities",
                 ValidatingEntityCallback.class.getSimpleName());
         return new ValidatingEntityCallback(validator);
+    }
+
+    @Bean
+    public MongoCascadeSaveListener mongoCascadeSaveListener(MongoTemplate mongoTemplate) {
+        log.debug("Building {} bean", MongoCascadeSaveListener.class.getSimpleName());
+        return new MongoCascadeSaveListener(mongoTemplate);
     }
 
     /**

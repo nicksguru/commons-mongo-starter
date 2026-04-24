@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.mapping.event.AbstractMongoEventListener;
 import org.springframework.data.mongodb.core.mapping.event.BeforeConvertEvent;
-import org.springframework.stereotype.Component;
 import org.springframework.util.ReflectionUtils;
 
 /**
@@ -14,7 +13,6 @@ import org.springframework.util.ReflectionUtils;
  * <p>
  * WARNING: this approach only works when using Spring Data to save documents. It's based on Mongo Spring events.
  */
-@Component
 @RequiredArgsConstructor
 public class MongoCascadeSaveListener extends AbstractMongoEventListener<Object> {
 
