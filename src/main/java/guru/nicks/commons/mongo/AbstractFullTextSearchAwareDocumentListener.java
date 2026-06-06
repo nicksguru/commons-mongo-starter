@@ -60,7 +60,7 @@ public abstract class AbstractFullTextSearchAwareDocumentListener
                     source.getFullTextSearchDataHighPriority(), source.getFullTextSearchDataLowPriority(),
                     source.getClass().getName(), source.getId());
         } else {
-            log.debug("Rebuilt full-text search ngrams for [{}] ID '{}'", source.getClass().getName(), source.getId());
+            log.info("Rebuilt FTS ngrams for [{}] ID '{}'", source.getClass().getName(), source.getId());
         }
     }
 
