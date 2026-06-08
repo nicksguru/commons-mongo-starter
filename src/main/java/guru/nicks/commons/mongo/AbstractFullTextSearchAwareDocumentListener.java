@@ -48,11 +48,11 @@ public abstract class AbstractFullTextSearchAwareDocumentListener
                 .collect(Collectors.joining(" "));
 
         String ngrams = String.join(" ",
-                NgramUtils.createNgrams(str, NgramUtils.Mode.PREFIX_ONLY, getNgramUtilsConfig()));
+                NgramUtils.createNgrams(str, NgramUtils.Mode.PREFIX, getNgramUtilsConfig()));
         source.setFullTextSearchDataHighPriority(StringUtils.substring(ngrams, 0, MAX_FULL_TEXT_SEARCH_DATA_LENGTH));
 
         ngrams = String.join(" ",
-                NgramUtils.createNgrams(str, NgramUtils.Mode.INFIX_ONLY, getNgramUtilsConfig()));
+                NgramUtils.createNgrams(str, NgramUtils.Mode.INFIX, getNgramUtilsConfig()));
         source.setFullTextSearchDataLowPriority(StringUtils.substring(ngrams, 0, MAX_FULL_TEXT_SEARCH_DATA_LENGTH));
 
         if (log.isTraceEnabled()) {
