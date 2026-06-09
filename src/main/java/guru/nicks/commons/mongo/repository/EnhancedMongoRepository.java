@@ -1,11 +1,16 @@
 package guru.nicks.commons.mongo.repository;
 
 import guru.nicks.commons.ApplicationContextHolder;
+import guru.nicks.commons.mongo.AbstractFullTextSearchAwareDocumentListener;
 import guru.nicks.commons.mongo.audit.AuditDetailsDocument;
 import guru.nicks.commons.mongo.audit.AuditableDocument;
 import guru.nicks.commons.mongo.domain.MongoConstants;
 import guru.nicks.commons.mongo.domain.MongoSearchLanguage;
 import guru.nicks.commons.utils.ReflectionUtils;
+import guru.nicks.commons.utils.text.EnglishUtils;
+import guru.nicks.commons.utils.text.NgramUtils;
+import guru.nicks.commons.utils.text.NgramUtilsConfig;
+import guru.nicks.commons.utils.text.TextUtils;
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Predicate;
@@ -25,8 +30,6 @@ import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.AggregationOptions;
 import org.springframework.data.mongodb.core.convert.MongoConverter;
 import org.springframework.data.mongodb.core.mapping.BasicMongoPersistentProperty;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -52,11 +55,13 @@ import java.lang.invoke.MethodHandles;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.SequencedSet;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -79,13 +84,6 @@ import static org.springframework.data.mongodb.core.aggregation.Fields.UNDERSCOR
 @SuppressWarnings("java:S119")  // allow type names like 'ID'
 public interface EnhancedMongoRepository<T extends Persistable<ID>, ID, E extends RuntimeException, F>
         extends MongoRepository<T, ID>, QuerydslPredicateExecutor<T> {
-
-    /**
-     * Recommended value, for example, for {@link AggregationOptions.Builder#cursorBatchSize(int)} - it should always be
-     * passed to {@link Aggregation#withOptions(AggregationOptions)} if it's presented as a stream
-     * ({@link MongoTemplate#aggregateStream(Aggregation, String, Class)}) to avoid OOM.
-     */
-    int DB_BATCH_SIZE = 500;
 
     /**
      * @see #getDocumentClass()
@@ -173,11 +171,13 @@ public interface EnhancedMongoRepository<T extends Persistable<ID>, ID, E extend
      */
     default Class<T> getDocumentClass() {
         return (Class<T>) ReflectionUtils.findMaterializedGenericType(getClass(), STATIC_THIS, Persistable.class)
-                .orElseThrow(() -> new IllegalStateException("Missing mapped class in " + getClass().getName()));
+                .orElseThrow(() -> new IllegalStateException("Missing mapped class in [" + getClass().getName() + "]"));
     }
 
     /**
-     * Performs full-text search.
+     * Performs full-text search. Needs a bean of type {@link AbstractFullTextSearchAwareDocumentListener} to be
+     * registered in the application context, so its
+     * {@link AbstractFullTextSearchAwareDocumentListener#getNgramUtilsConfig()} is used.
      *
      * @param q              search text
      * @param searchLanguage language to perform search query analysis for
@@ -185,11 +185,25 @@ public interface EnhancedMongoRepository<T extends Persistable<ID>, ID, E extend
      * @return documents found, most relevant first
      */
     default Page<T> searchFullText(String q, @Nullable MongoSearchLanguage searchLanguage, Pageable pageable) {
+        NgramUtilsConfig config = ApplicationContextHolder.getApplicationContext()
+                .getBean(AbstractFullTextSearchAwareDocumentListener.class)
+                .getNgramUtilsConfig();
+
+        // add words that are shorter than the minimum ngram length, otherwise they'll be omitted
+        SequencedSet<String> chunks = TextUtils.collectUniqueWords(q, config.isReduceAccents())
+                .stream()
+                .filter(word -> word.length() < config.getMinNgramLength())
+                // either English morph analysis is off or the word is not an English stop word
+                .filter(word -> !config.tryEnglishMorphAnalysis() || !EnglishUtils.stopWord(word))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        chunks.addAll(NgramUtils.createNgrams(q, NgramUtils.Mode.ALL, NgramUtilsConfig.DEFAULT));
+        String fts = String.join(" ", chunks);
+
         // each document may contain the 'language' field, so language should not matter here, but it does matter
         TextCriteria criteria = (searchLanguage == null)
                 ? TextCriteria.forDefaultLanguage()
                 : TextCriteria.forLanguage(searchLanguage.name());
-        criteria.matching(q);
+        criteria.matching(fts);
 
         // collation doesn't work for full text search
         Query query = TextQuery.queryText(criteria)

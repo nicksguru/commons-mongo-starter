@@ -1,6 +1,9 @@
 package guru.nicks.commons.mongo.domain;
 
 import lombok.experimental.UtilityClass;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationOptions;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.query.Collation;
 
@@ -8,6 +11,14 @@ import java.util.Locale;
 
 @UtilityClass
 public class MongoConstants {
+
+    /**
+     * Recommended value for <b>internal</b> (not UI-facing) paginated queries - for instance, for
+     * {@link AggregationOptions.Builder#cursorBatchSize(int)} - it should always be passed to
+     * {@link Aggregation#withOptions(AggregationOptions)} if it's presented as a stream
+     * ({@link MongoTemplate#aggregateStream(Aggregation, String, Class)}) to avoid OOM.
+     */
+    public static final int INTERNAL_PAGE_SIZE = 500;
 
     /**
      * Search with collation strength 1 (which this field defines) coalesces diacritics, which means 'â' becomes the
