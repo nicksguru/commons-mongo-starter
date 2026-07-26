@@ -1,7 +1,7 @@
 package guru.nicks.commons.mongo.mapper;
 
 import guru.nicks.commons.mapper.DefaultMapStructConfig;
-import guru.nicks.commons.rest.v1.dto.GeoPointDto;
+import guru.nicks.commons.rest.dto.GeoPointDto;
 
 import org.mapstruct.Mapper;
 import org.springframework.data.geo.Point;
