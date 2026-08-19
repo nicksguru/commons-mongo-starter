@@ -298,7 +298,7 @@ public interface EnhancedMongoRepository<T extends Persistable<ID>, ID, E extend
     }
 
     /**
-     * Throws {@link #getExceptionClass()} if the document is not found.
+     * Throws {@code E} ({@link #getExceptionClass()}) if the document is not found.
      *
      * @param id document ID
      * @return document
