@@ -236,7 +236,7 @@ public interface EnhancedMongoRepository<T extends Persistable<ID>, ID, E extend
             var query = new BasicQuery(doc).with(pageable);
             // add collation to raw query - Spring Data can't handle it on high level
             query.collation(collation);
-            // TODO: there seems no other way to grab a bean from an interface. Custom repository implementation won't
+            // TODO: there seems no other way to grab a bean from an interface. Custom repository implementations won't
             // work here because the actual mapped class is a generic parameter.
             List<T> results = getMongoTemplate().find(query, mappedClass);
 
@@ -298,7 +298,7 @@ public interface EnhancedMongoRepository<T extends Persistable<ID>, ID, E extend
     }
 
     /**
-     * Does the same as {@link #findById(ID)}, but throws {@link #getExceptionClass()} if the document is not found.
+     * Throws {@link #getExceptionClass()} if the document is not found.
      *
      * @param id document ID
      * @return document
