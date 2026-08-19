@@ -7,17 +7,28 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.Document;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mapping.MappingException;
+import org.springframework.data.mongodb.core.BulkOperations;
+import org.springframework.data.mongodb.core.FindAndReplaceOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InaccessibleObjectException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.springframework.data.mongodb.core.aggregation.Fields.UNDERSCORE_ID;
 
 /**
  * Called before all writes, not only for fields annotated with {@link MongoCascadeSave MongoCascadeSave}.
@@ -80,20 +91,64 @@ public class MongoCascadeSaveCallback implements ReflectionUtils.FieldCallback {
                     + ", otherwise cascade save fails");
         }
 
-        if (childDocument instanceof Iterable) {
-            ((Iterable<?>) childDocument).forEach(document ->
-                    performCascadeSave(field.getName(), document));
+        if (childDocument instanceof Iterable<?> children) {
+            performCascadeSave(field.getName(), children);
             return;
         }
 
-        performCascadeSave(field.getName(), childDocument);
+        performCascadeSave(field.getName(), List.of(childDocument));
     }
 
-    private void performCascadeSave(String fieldName, Object document) {
-        ensureClassHasPrimaryKeyField(document.getClass());
-        log.debug("Performing cascade save of '{} {}' from {}", ClassUtils.getUserClass(document.getClass()).getName(),
-                fieldName, parentDocument.getClass().getName());
-        mongoTemplate.save(document);
+    /**
+     * Saves cascade children belonging to one parent field. Documents already having an ID are persisted with a single
+     * bulk operation per document class, unlike one {@link MongoTemplate#save(Object)} network round trip per
+     * document. Documents having no ID are still saved one by one because only this way Spring Data writes the
+     * generated ID back into the source object, and the parent's {@link DBRef @DBRef}/
+     * {@link DocumentReference @DocumentReference} refers to that ID. Lifecycle events (such as nested cascade saves)
+     * and before-convert callbacks (such as auditing) are preserved because bulk operations emit them too.
+     *
+     * @param fieldName parent's field holding the documents
+     * @param documents documents to save
+     */
+    private void performCascadeSave(String fieldName, Iterable<?> documents) {
+        // one bulk operation per document class because a bulk operation targets a single collection
+        Map<Class<?>, List<Object>> documentsByClass = new LinkedHashMap<>();
+        documents.forEach(document ->
+                documentsByClass.computeIfAbsent(document.getClass(), key -> new ArrayList<>()).add(document));
+
+        documentsByClass.forEach((documentClass, classDocuments) -> {
+            ensureClassHasPrimaryKeyField(documentClass);
+            log.debug("Performing cascade save of {} document(s) of '{}' from {}", classDocuments.size(), fieldName,
+                    parentDocument.getClass().getName());
+
+            BulkOperations bulkOperations = null;
+
+            for (Object document : classDocuments) {
+                // the ID must be taken from the converted document because its BSON representation (such as String
+                // vs ObjectId) is what's actually stored
+                Document convertedDocument = new Document();
+                mongoTemplate.getConverter().write(document, convertedDocument);
+                Object id = convertedDocument.get(UNDERSCORE_ID);
+
+                if (id == null) {
+                    mongoTemplate.save(document);
+                    continue;
+                }
+
+                if (bulkOperations == null) {
+                    bulkOperations = mongoTemplate.bulkOps(BulkOperations.BulkMode.ORDERED,
+                            ClassUtils.getUserClass(documentClass));
+                }
+
+                // 'save' semantics: replace the whole document or insert it if it doesn't exist yet
+                bulkOperations.replaceOne(new Query(Criteria.where(UNDERSCORE_ID).is(id)), document,
+                        new FindAndReplaceOptions().upsert());
+            }
+
+            if (bulkOperations != null) {
+                bulkOperations.execute();
+            }
+        });
     }
 
     /**

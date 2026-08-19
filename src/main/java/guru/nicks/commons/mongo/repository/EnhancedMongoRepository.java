@@ -55,6 +55,7 @@ import java.lang.invoke.MethodHandles;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -279,24 +280,33 @@ public interface EnhancedMongoRepository<T extends Persistable<ID>, ID, E extend
      * @return elements in the same order as in {@code ids}, mutable list
      */
     default List<T> findAllByIdPreserveOrder(Iterable<ID> ids) {
-        // need indexOf() which only List has
-        List<ID> list = (ids instanceof List) ? (List<ID>) ids : IterableUtils.toList(ids);
+        // need indexed access to IDs which only List has
+        List<ID> list = (ids instanceof List)
+                ? (List<ID>) ids
+                : IterableUtils.toList(ids);
+
+        // ID -> index of its first occurrence in the request; makes the sort below O(n log n) instead of O(n^2)
+        // (indexOf() would scan the whole list for every element)
+        Map<ID, Integer> id2index = HashMap.newHashMap(list.size());
+        for (int i = 0; i < list.size(); i++) {
+            id2index.putIfAbsent(list.get(i), i);
+        }
 
         return findAllById(list).stream()
-                .sorted(Comparator.comparing(document -> list.indexOf(document.getId())))
+                .sorted(Comparator.comparing(document -> id2index.get(document.getId())))
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
     /**
-     * Subinterfaces may override this to throw more specific exceptions.
+     * Does the same as {@link #findById(ID)}, but throws {@link #getExceptionClass()} if the document is not found.
      *
      * @param id document ID
      * @return document
      * @throws E document not found
      */
     default T getById(ID id) {
-        return findById(id).orElseThrow(() ->
-                ReflectionUtils.instantiateEvenWithoutDefaultConstructor(getExceptionClass()));
+        return findById(id).orElseThrow(
+                () -> ReflectionUtils.instantiateEvenWithoutDefaultConstructor(getExceptionClass()));
     }
 
     /**
