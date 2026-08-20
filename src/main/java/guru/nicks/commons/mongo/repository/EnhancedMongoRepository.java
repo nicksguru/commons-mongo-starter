@@ -237,7 +237,8 @@ public interface EnhancedMongoRepository<T extends Persistable<ID>, ID, E extend
             // add collation to raw query - Spring Data can't handle it on high level
             query.collation(collation);
             // TODO: there seems no other way to grab a bean from an interface. Custom repository implementations won't
-            // work here because the actual mapped class is a generic parameter.
+            // work here because the actual mapped class is a generic parameter (or go for a custom repository factory
+            // adding custom Spring Data repository fragments).
             List<T> results = getMongoTemplate().find(query, mappedClass);
 
             // this is what Spring Data does to apply pagination to raw queries
@@ -298,7 +299,9 @@ public interface EnhancedMongoRepository<T extends Persistable<ID>, ID, E extend
     }
 
     /**
-     * Throws {@code E} ({@link #getExceptionClass()}) if the document is not found.
+     * Throws {@code E} ({@link #getExceptionClass()}) if the document is not found. The exception construction path is
+     * memoized per exception class (see {@link MemoizedExceptionSuppliers}), but each miss still produces a fresh
+     * exception instance.
      *
      * @param id document ID
      * @return document
@@ -306,7 +309,7 @@ public interface EnhancedMongoRepository<T extends Persistable<ID>, ID, E extend
      */
     default T getById(ID id) {
         return findById(id).orElseThrow(
-                () -> ReflectionUtils.instantiateEvenWithoutDefaultConstructor(getExceptionClass()));
+                MemoizedExceptionSuppliers.getSupplierFor(getExceptionClass()));
     }
 
     /**

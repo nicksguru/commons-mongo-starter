@@ -5,14 +5,14 @@
     <parent>
         <groupId>guru.nicks.commons</groupId>
         <artifactId>parent</artifactId>
-        <version>100.260819.0</version><!-- BUNDLE_VERSION -->
+        <version>100.260820.0</version><!-- BUNDLE_VERSION -->
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <!-- groupId is redundant (inherited from parent), but required by Maven Central -->
     <groupId>guru.nicks.commons</groupId>
     <artifactId>mongo-starter</artifactId>
-    <version>100.260819.0</version><!-- BUNDLE_VERSION -->
+    <version>100.260820.0</version><!-- BUNDLE_VERSION -->
 
     <name>Nicks.Guru Commons Mongo Starter</name>
     <description>Starter for working with MongoDB</description>
@@ -96,6 +96,14 @@
             <groupId>commons-beanutils</groupId>
             <artifactId>commons-beanutils</artifactId>
         </dependency>
+
+        <!-- Cucumber, JUnit, AssertJ, Mockito for unit tests (no MongoDB needed) -->
+        <dependency>
+            <groupId>guru.nicks.commons</groupId>
+            <artifactId>cucumber-test-starter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- @Builder, @Slf4j, etc. -->
         <dependency>
             <groupId>org.projectlombok</groupId>

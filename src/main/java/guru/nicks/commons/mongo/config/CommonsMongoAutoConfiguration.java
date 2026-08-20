@@ -17,10 +17,12 @@ import org.bson.BsonDateTime;
 import org.bson.UuidRepresentation;
 import org.bson.types.Decimal128;
 import org.mapstruct.factory.Mappers;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.mongo.MongoClientSettingsBuilderCustomizer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.env.Environment;
@@ -40,6 +42,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -97,7 +100,7 @@ public class CommonsMongoAutoConfiguration {
     @ConditionalOnMissingBean
     @Bean
     public MongoDatabaseFactory mongoDatabaseFactory(MyMongoProperties properties, Environment environment,
-            List<MongoClientSettingsBuilderCustomizer> customizers) {
+            Collection<MongoClientSettingsBuilderCustomizer> customizers) {
         log.debug("Building {} bean", MongoDatabaseFactory.class.getSimpleName());
 
         var connectionString = deriveConnectionString(properties, environment);
@@ -171,6 +174,21 @@ public class CommonsMongoAutoConfiguration {
     public DateTimeProvider mongoAuditDateTimeProvider() {
         log.debug("Building {} bean for Mongo audit date/time provider", DateTimeProvider.class.getSimpleName());
         return () -> Optional.of(Instant.now());
+    }
+
+    /**
+     * Validates enhanced Mongo repositories eagerly at startup (during context refresh, after all singletons are
+     * instantiated): unmaterialized generics or a missing argumentless constructor in the exception class previously
+     * surfaced only at the first {@code getById} miss. Pure reflection on repository interfaces, no database access.
+     * {@code convertToSearchPredicate} needs no check: it's abstract and enforced by Spring Data query derivation at
+     * startup.
+     *
+     * @param applicationContext application context to look up repository beans in
+     * @return singleton performing the validation once the context is ready
+     */
+    @Bean
+    public SmartInitializingSingleton enhancedMongoRepositoryValidator(ApplicationContext applicationContext) {
+        return () -> EnhancedMongoRepositoryValidator.validate(applicationContext);
     }
 
     /**
