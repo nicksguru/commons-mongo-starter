@@ -6,6 +6,7 @@ import guru.nicks.commons.mongo.audit.AuditDetailsDocument;
 import guru.nicks.commons.mongo.audit.AuditableDocument;
 import guru.nicks.commons.mongo.domain.MongoConstants;
 import guru.nicks.commons.mongo.domain.MongoSearchLanguage;
+import guru.nicks.commons.utils.ExceptionUtils;
 import guru.nicks.commons.utils.ReflectionUtils;
 import guru.nicks.commons.utils.text.EnglishUtils;
 import guru.nicks.commons.utils.text.NgramUtils;
@@ -299,17 +300,16 @@ public interface EnhancedMongoRepository<T extends Persistable<ID>, ID, E extend
     }
 
     /**
-     * Throws {@code E} ({@link #getExceptionClass()}) if the document is not found. The exception construction path is
-     * memoized per exception class (see {@link MemoizedExceptionSuppliers}), but each miss still produces a fresh
-     * exception instance.
+     * Throws {@code E} ({@link #getExceptionClass()}) if the document is not found.
      *
      * @param id document ID
      * @return document
      * @throws E document not found
      */
     default T getById(ID id) {
-        return findById(id).orElseThrow(
-                MemoizedExceptionSuppliers.getSupplierFor(getExceptionClass()));
+        return findById(id).orElseThrow(() -> ExceptionUtils
+                .getExceptionFactory(getExceptionClass())
+                .apply(null));
     }
 
     /**

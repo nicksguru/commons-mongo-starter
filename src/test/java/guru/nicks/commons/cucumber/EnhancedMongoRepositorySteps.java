@@ -1,15 +1,15 @@
 package guru.nicks.commons.cucumber;
 
 import guru.nicks.commons.mongo.repository.EnhancedMongoRepository;
-import guru.nicks.commons.mongo.repository.MemoizedExceptionSuppliers;
+import guru.nicks.commons.utils.ExceptionUtils;
 
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import lombok.experimental.StandardException;
 import org.springframework.data.domain.Persistable;
 
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
@@ -28,9 +28,6 @@ public class EnhancedMongoRepositorySteps {
 
     private ValidRepository repository;
     private String missingId;
-
-    private Supplier<GoodException> memoizedSupplier;
-    private Supplier<GoodException> anotherMemoizedSupplier;
 
     private GoodException firstThrownException;
     private GoodException secondThrownException;
@@ -71,32 +68,6 @@ public class EnhancedMongoRepositorySteps {
                 .isNotSameAs(firstThrownException);
     }
 
-    @When("a memoized exception supplier is obtained for the repository exception class")
-    public void aMemoizedExceptionSupplierIsObtainedForTheRepositoryExceptionClass() {
-        memoizedSupplier = MemoizedExceptionSuppliers.getSupplierFor(GoodException.class);
-    }
-
-    @When("the supplier is obtained again")
-    public void theSupplierIsObtainedAgain() {
-        anotherMemoizedSupplier = MemoizedExceptionSuppliers.getSupplierFor(GoodException.class);
-    }
-
-    @Then("both suppliers should be the same instance")
-    public void bothSuppliersShouldBeTheSameInstance() {
-        // same construction path per exception class...
-        assertThat(anotherMemoizedSupplier)
-                .as("repeatedly obtained supplier")
-                .isSameAs(memoizedSupplier);
-    }
-
-    @Then("each supplier call should produce a distinct exception instance")
-    public void eachSupplierCallShouldProduceADistinctExceptionInstance() {
-        // ...producing a new exception instance on each call
-        assertThat(memoizedSupplier.get())
-                .as("freshly supplied exception")
-                .isNotSameAs(memoizedSupplier.get());
-    }
-
     /**
      * Non-generic subinterface: generics are materialized here exactly like in user repositories.
      */
@@ -123,9 +94,11 @@ public class EnhancedMongoRepositorySteps {
     }
 
     /**
-     * Exception with an argumentless constructor.
+     * According to {@link ExceptionUtils#getExceptionFactory(Class)}, the class must have a public constructor with a
+     * cause parameter.
      */
-    static class GoodException extends RuntimeException {
+    @StandardException
+    public static class GoodException extends RuntimeException {
     }
 
 }
