@@ -13,6 +13,7 @@ import guru.nicks.commons.utils.text.NgramUtils;
 import guru.nicks.commons.utils.text.NgramUtilsConfig;
 import guru.nicks.commons.utils.text.TextUtils;
 
+import com.mongodb.client.result.UpdateResult;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Predicate;
 import jakarta.annotation.Nullable;
@@ -46,6 +47,7 @@ import org.springframework.data.mongodb.core.query.UpdateDefinition;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.support.SpringDataMongodbQuery;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.NoRepositoryBean;
 import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.security.core.Authentication;
@@ -69,6 +71,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static guru.nicks.commons.validation.dsl.ValiDsl.checkNotNullNested;
 import static org.springframework.data.mongodb.core.aggregation.Fields.UNDERSCORE_ID;
 
 /**
@@ -237,9 +240,6 @@ public interface EnhancedMongoRepository<T extends Persistable<ID>, ID, E extend
             var query = new BasicQuery(doc).with(pageable);
             // add collation to raw query - Spring Data can't handle it on high level
             query.collation(collation);
-            // TODO: there seems no other way to grab a bean from an interface. Custom repository implementations won't
-            // work here because the actual mapped class is a generic parameter (or go for a custom repository factory
-            // adding custom Spring Data repository fragments).
             List<T> results = getMongoTemplate().find(query, mappedClass);
 
             // this is what Spring Data does to apply pagination to raw queries
@@ -424,6 +424,37 @@ public interface EnhancedMongoRepository<T extends Persistable<ID>, ID, E extend
      */
     default Document createQueryDocument(Predicate predicate, Class<T> mappedClass) {
         return new QueryUtils<>(getMongoTemplate(), mappedClass).createQuery(predicate);
+    }
+
+    /**
+     * Atomically inserts the document only when no document with the same ID exists; never modifies an existing one
+     * (updating existing documents is a separate concern, unlike {@link CrudRepository#save(Object)} which is an upsert
+     * too when the ID is set manually).
+     * <p>
+     * MongoDB's canonical insert-if-absent idiom: {@code updateOne} carrying {@code $setOnInsert} as the only update
+     * operator plus {@code upsert: true}. When a document with the same ID already exists, the filter matches it but
+     * nothing is written, so the winner document is fully preserved and no exception is thrown.
+     * <p>
+     * WARNING: entity lifecycle callbacks ({@code BeforeConvert}/{@code BeforeSave}) don't run for update-statement
+     * writes, so the caller must assign audit fields beforehand.
+     *
+     * @param document document to insert (ID must be set)
+     * @return {@code true} if the document was inserted, {@code false} if a document with the same ID already existed
+     */
+    default boolean insertIfAbsent(T document) {
+        checkNotNullNested(document, "document", Persistable::getId, "id");
+
+        var dbDoc = new Document();
+        getMongoTemplate().getConverter().write(document, dbDoc);
+        var query = Query.query(Criteria.where(UNDERSCORE_ID).is(document.getId()));
+
+        // $setOnInsert is the only update operator, so an existing (matched) document is never modified
+        var update = Update.fromDocument(new Document("$setOnInsert", dbDoc));
+        // upsert() (not updateFirst()) - inserts when the filter matches nothing; the race loser merely matches
+        UpdateResult result = getMongoTemplate().upsert(query, update, getDocumentClass());
+
+        // upsertedId is set only when a new document was inserted (matched-but-not-modified means it existed already)
+        return result.getUpsertedId() != null;
     }
 
     /**
