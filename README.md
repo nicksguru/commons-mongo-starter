@@ -28,7 +28,7 @@ See full version history on
         <dependency>
             <groupId>guru.nicks.commons</groupId>
             <artifactId>bom</artifactId>
-            <version>100.260905.1</version>
+            <version>100.260921.0</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -49,7 +49,7 @@ To browse the API documentation, click [here](https://nicks.guru/commons/commons
 
 ## AI Tip
 
-Grab a 10% discount on **GLM 4.7 Coding Plan** model.
+Grab a 10% discount on **GLM Coding Plan**.
 
 🚀 Full support for 10+ top coding tools such as Claude Code, Cursor, Cline, Kilo Code, Roo Code, Sweep AI - starting at
 just $3 per month. **[Subscribe now](https://z.ai/subscribe?ic=FQFBJRY7RM)** and take advantage of the limited-time
