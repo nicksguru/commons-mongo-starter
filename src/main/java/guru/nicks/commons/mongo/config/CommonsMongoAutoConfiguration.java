@@ -1,5 +1,6 @@
 package guru.nicks.commons.mongo.config;
 
+import guru.nicks.commons.mongo.EnhancedMongoRepositoryValidator;
 import guru.nicks.commons.mongo.MongoCascadeSaveListener;
 import guru.nicks.commons.mongo.audit.AuditDetailsDocument;
 import guru.nicks.commons.mongo.audit.MongoAuditor;
@@ -20,8 +21,8 @@ import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.mongo.MongoClientSettingsBuilderCustomizer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.mongodb.autoconfigure.MongoClientSettingsBuilderCustomizer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.convert.converter.Converter;
@@ -119,8 +120,14 @@ public class CommonsMongoAutoConfiguration {
     }
 
     private String deriveConnectionString(MyMongoProperties mongoProperties, Environment environment) {
-        String explicitUri = environment.getProperty("spring.data.mongodb.uri");
-        // during testing, URI points to TestContainers and contains no auth, so DB_URI_FORMAT is not applicable
+        // Boot 4 renamed the connection properties: 'spring.data.mongodb.uri' -> 'spring.mongodb.uri'
+        // (keep legacy name from Spring Boot 3 for migrating apps)
+        String explicitUri = environment.getProperty("spring.mongodb.uri");
+        if (StringUtils.isBlank(explicitUri)) {
+            explicitUri = environment.getProperty("spring.data.mongodb.uri");
+        }
+
+        // e.g. during testing, URI points to TestContainers
         if (StringUtils.isNotBlank(explicitUri)) {
             return explicitUri;
         }
