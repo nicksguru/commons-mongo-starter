@@ -1,5 +1,6 @@
 package guru.nicks.commons.mongo.config;
 
+import guru.nicks.commons.mongo.EnhancedMongoRepositoryValidator;
 import guru.nicks.commons.mongo.MongoCascadeSaveListener;
 import guru.nicks.commons.mongo.audit.AuditDetailsDocument;
 import guru.nicks.commons.mongo.audit.MongoAuditor;

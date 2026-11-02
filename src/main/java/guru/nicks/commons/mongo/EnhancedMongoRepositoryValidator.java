@@ -1,4 +1,4 @@
-package guru.nicks.commons.mongo.config;
+package guru.nicks.commons.mongo;
 
 import guru.nicks.commons.mongo.repository.EnhancedMongoRepository;
 

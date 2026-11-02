@@ -1,7 +1,7 @@
 package guru.nicks.commons.cucumber;
 
 import guru.nicks.commons.cucumber.world.TextWorld;
-import guru.nicks.commons.mongo.config.EnhancedMongoRepositoryValidator;
+import guru.nicks.commons.mongo.EnhancedMongoRepositoryValidator;
 import guru.nicks.commons.mongo.repository.EnhancedMongoRepository;
 
 import io.cucumber.java.en.Given;
