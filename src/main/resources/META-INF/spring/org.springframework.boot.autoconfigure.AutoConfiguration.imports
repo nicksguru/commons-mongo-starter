@@ -1,1 +1,2 @@
 guru.nicks.commons.mongo.config.CommonsMongoAutoConfiguration
+guru.nicks.commons.mongo.config.CommonsFlamingockAutoConfiguration

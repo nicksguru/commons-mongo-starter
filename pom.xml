@@ -5,14 +5,14 @@
     <parent>
         <groupId>guru.nicks.commons</groupId>
         <artifactId>parent</artifactId>
-        <version>100.261014.0</version><!-- BUNDLE_VERSION -->
+        <version>100.261102.0</version><!-- BUNDLE_VERSION -->
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <!-- groupId is redundant (inherited from parent), but required by Maven Central -->
     <groupId>guru.nicks.commons</groupId>
     <artifactId>mongo-starter</artifactId>
-    <version>100.261014.0</version><!-- BUNDLE_VERSION -->
+    <version>100.261102.0</version><!-- BUNDLE_VERSION -->
 
     <name>Nicks.Guru Commons Mongo Starter</name>
     <description>Starter for working with MongoDB</description>
@@ -78,14 +78,18 @@
             <artifactId>querydsl-mongodb</artifactId>
         </dependency>
 
-        <!-- DB migrations -->
+        <!-- MongoDB migrations (successor of Mongock, imports its audit log) -->
         <dependency>
-            <groupId>io.mongock</groupId>
-            <artifactId>mongock-springboot-v3</artifactId>
+            <groupId>io.flamingock</groupId>
+            <artifactId>flamingock-springboot-integration</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.mongock</groupId>
-            <artifactId>mongodb-springdata-v4-driver</artifactId>
+            <groupId>io.flamingock</groupId>
+            <artifactId>flamingock-mongodb-springdata-targetsystem</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.flamingock</groupId>
+            <artifactId>flamingock-mongodb-sync-auditstore</artifactId>
         </dependency>
 
         <dependency>
