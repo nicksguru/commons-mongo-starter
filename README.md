@@ -29,7 +29,7 @@ See full version history on
             <groupId>guru.nicks.commons</groupId>
             <artifactId>bom</artifactId>
             <!-- 400.* for Sprint Boot 4; 100.* for Spring Boot 3 -->
-            <version>400.261031.0</version>
+            <version>400.261103.0</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
